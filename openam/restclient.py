@@ -20,6 +20,7 @@ AQIC5wM2LY4Sfcy8a-eXHlPdvTfXo-HLxs761OviSVrRFlg.*AAJTSQACMDEAAlNLABQtNDg3MTMxNjI
 import requests
 import urllib
 import re
+import json
 
 # Token value is a string with the character '*',
 # and requests use urlib.quote to quote all non printable
@@ -61,14 +62,14 @@ class ClientException(Exception):
 
 class ClientAuthenticationFailed(Exception):
     """
-    Exception raised when Client can't be 
+    Exception raised when Client can't be
     authenticated with ones credentials
     """
     pass
 
 class ClientUnauthorized(Exception):
     """
-    Exception raised when Client interface has no 
+    Exception raised when Client interface has no
     privilegies to make some action
     """
     pass
@@ -79,34 +80,42 @@ class Client:
     Client rest implementation to comunicate with one OpenAm service
     """
 
-    _auth_resource = "/identity/authenticate"
+    _format = '/json'
+    _auth_resource = '/authenticate'
     _logout_resource = "/identity/logout"
     _token_resource = "/identity/isTokenValid"
     _attribute_resource = "/identity/attributes"
     _set_attribute_resource = "/identity/update"
+    _create_resource = "/identity/create"
+    _authorize_resource = "/identity/authorize"
+    _log_resource = "/identity/log"
+    _delete_resource = "/identity/delete"
+    _search_resource = "/identity/search"
+
+    def _urljoin(self, resource):
+        return self._url + '/identity' + self._format + resource
 
     def __init__(self, url, username, password):
         """
-        Create one Rest Client against url server with one already authenticated 
-        sesion with username and password values. 
+        Create one Rest Client against url server with one already authenticated
+        sesion with username and password values.
         """
         if url[-1] == "/":
             self._url = url[:-1]
         else:
             self._url = url
 
-        r = requests.get(urljoin(self._url, Client._auth_resource),
-                         params={"username": username, "password": password})
+        request = requests.get(self._urljoin(self._auth_resource),
+                         params={'username': username, 'password': password})
 
-        if r.status_code != requests.status_codes.codes.ok:
+        if request.status_code != requests.status_codes.codes.ok:
             raise ClientAuthenticationFailed()
 
         try:
-            _, token_id = r.text.split("=")
-            token_id = token_id.strip(" \r\n")
+            token_id = json.loads(request.text)['tokenId']
         except Exception, e:
-            raise ClientException(r.status_code, 
-                                  "Some error has ocurred getting the token value from %s" % r.text)
+            raise ClientException(request.status_code,
+                                  "Some error has ocurred getting the token value from %s" % request.text)
 
         self._token_id = token_id
         self._username = username
