@@ -83,8 +83,8 @@ class Client:
     _format = '/json'
     _auth_resource = '/authenticate'
     _logout_resource = "/identity/logout"
-    _token_resource = "/identity/isTokenValid"
-    _attribute_resource = "/identity/attributes"
+    _token_resource = "/isTokenValid"
+    _attribute_resource = "/attributes"
     _set_attribute_resource = "/identity/update"
     _create_resource = "/identity/create"
     _authorize_resource = "/identity/authorize"
@@ -157,7 +157,7 @@ class Client:
         """
         Return if current token_id is still valid
         """
-        r = requests.get(urljoin(self._url, Client._token_resource),
+        r = requests.get(self._urljoin(self._token_resource),
                          params={"tokenid": self._token_id})
 
         if r.status_code == requests.status_codes.codes.unauthorized:
@@ -167,14 +167,13 @@ class Client:
             raise ClientException(r.status_code, error_messages)
 
         try:
-            type_, value = r.text.split("=")
-            value = value.strip(" \r\n")
+            value = json.loads(r.text)['boolean']
         except Exception, e:
             raise ClientException(r.status_code,
                                   "Some error has ocurred getting the result value from %s"
                                   % r.text)
 
-        return value == "true"
+        return value
 
     def logout(self):
         """
@@ -193,31 +192,22 @@ class Client:
         if args:
             kwargs["attributenames"] = args
 
-        r = self._token_id_request(urljoin(self._url, Client._attribute_resource), **kwargs)
+        r = self._token_id_request(self._urljoin(self._attribute_resource), **kwargs)
 
         # parse contennt looking for all attributes
-        attributes = []
-        for line in r.text.splitlines():
-            r = re.match("(userdetails\.attribute\.name)=(.*)", line)
-            if r:
-                name = r.groups()[1]
-                attributes.append([name, None])
-                continue  # next line
+        attributes = {}
 
-            r = re.match("(userdetails\.attribute\.value)=(.*)", line)
-            if r:
-                value = r.groups()[1]
-                # last name parsed is where it has to
-                # be stacked
-                if attributes[-1][1] == None:
-                    attributes[-1][1] = value
-                if isinstance(attributes[-1][1], list):
-                    attributes[-1][1].append(value)
-                else:
-                    # cast to list
-                    attributes[-1].append([attributes[-1][1], value])
+        for line in json.loads(r.text)['attributes']:
+            values = line['values']
+            if line['name'] == 'dn':
+                values = line['values'][0].split(',')
 
-        return dict([(item[0], item[1]) for item in attributes])
+            if 1==len(values):
+                attributes[line['name']] = values[0]
+            else:
+                attributes[line['name']] = values
+
+        return attributes
 
     def set_attribute(self, name, value):
         """
