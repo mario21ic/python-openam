@@ -1,0 +1,5 @@
+argparse==1.2.1
+mock==1.0.1
+requests==2.2.1
+unittest2==0.5.1
+wsgiref==0.1.2
