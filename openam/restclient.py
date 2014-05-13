@@ -80,11 +80,10 @@ class Client:
     Client rest implementation to comunicate with one OpenAm service
     """
 
-    _format = '/json'
-    _auth_resource = '/authenticate'
+    _auth_resource = '/identity/json/authenticate'
     _logout_resource = "/identity/logout"
-    _token_resource = "/isTokenValid"
-    _attribute_resource = "/attributes"
+    _token_resource = "/identity/json/isTokenValid"
+    _attribute_resource = "/identity/json/attributes"
     _set_attribute_resource = "/identity/update"
     _create_resource = "/identity/create"
     _authorize_resource = "/identity/authorize"
@@ -93,7 +92,7 @@ class Client:
     _search_resource = "/identity/search"
 
     def _urljoin(self, resource):
-        return self._url + '/identity' + self._format + resource
+        return self._url + resource
 
     def __init__(self, url, username, password):
         """

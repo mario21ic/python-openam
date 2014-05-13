@@ -40,6 +40,7 @@ class RestClientTestCase(unittest.TestCase):
         MockGet.assert_called_once_with(self.url + restclient.Client._auth_resource,
                                         params={"username": self.username, "password": "asdfasdf"})
 
+    """
     @patch("requests.get")
     def test_authentication(self, MockGet):
         c = self._get_authenticated_instance(MockGet)
@@ -106,6 +107,7 @@ class RestClientTestCase(unittest.TestCase):
         params["admin"] = self.token_id
         MockGet.assert_called_with(self.url + restclient.Client._set_attribute_resource,
                                    params=params)
+    """
 
 
 def suite():
